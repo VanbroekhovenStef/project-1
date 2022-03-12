@@ -12,13 +12,16 @@ function Square(props) {
 }
 
 class Row extends React.Component {
-    // constructor(props) {
-    //     super(props);
-    //     this.state = {
-    //         squares: Array(4).fill(null),
-    //     };
-    // }
+    constructor(props) {
+        super(props);
+        this.state = {
+            squares: Array(4).fill(null),
+            last: props.last,
+            editable: props.editable,
+        };
+    }
 
+    // Assign values to the squares in Row
     handleClick(i) {
         const squares = this.state.squares.slice();
         const value = this.getColor();
@@ -27,34 +30,47 @@ class Row extends React.Component {
         this.setState({squares: squares});
     }
 
-    handleConfirm(i) {
-        window.localStorage.setItem('correct', this.state.squares.slice());
-    }
-
+    // Get the selected color from ColorMenu
     getColor() {
         const value = window.localStorage.getItem('color');
         window.localStorage.removeItem('color');
         return (value);
     }
 
-    // VOOR STATE LIFT
-    // renderSquare(i) {
-    //     return (
-    //         <Square 
-    //             value={this.state.squares[i]}
-    //             onClick={() => this.handleClick(i)}
-    //         />);
-    // }
-
+    // Render the row --> editable or non-editable, depending on if it is the current move
     renderSquare(i) {
-        return (
-            <Square 
-                value={this.props.squares[i]}
-                onClick={() => this.props.onClick(i)}
-            />);
+        if (this.props.editable) {
+            return (
+                <Square 
+                    value={this.state.squares[i]}
+                    onClick={() => this.handleClick(i)}
+                />
+            );
+        } else {
+            return (
+                <Square value={this.state.squares[i]}/>
+            );
+        }
     }
 
     render() {
+        let rows = [];
+
+        if (this.props.last && !this.state.squares.includes(null)) {
+            rows.push(
+                <button 
+                    onClick={
+                        () => {
+                            this.props.onClick() ; 
+                            window.localStorage.setItem('lastEntry', this.state.squares) ;  
+                            console.log(window.localStorage.getItem('lastEntry'))
+                        }
+                    }
+                >
+                    Confirm
+                </button>
+            );
+        }
         return (
             <div>
                 <div className="board-row">
@@ -62,6 +78,7 @@ class Row extends React.Component {
                     {this.renderSquare(1)}
                     {this.renderSquare(2)}
                     {this.renderSquare(3)}
+                    {rows}
                 </div>
             </div>
         )
@@ -70,40 +87,77 @@ class Row extends React.Component {
 }
   
 class Board extends React.Component {
-constructor(props) {
-    super(props);
-    this.state = {
-        history: [{
-            squares: Array(12).fill(null),
-        }]
+    constructor(props) {
+        super(props);
+        this.state = {
+            history: [{
+                squares: Array(12).fill(null),
+            }]
+        }
     }
-}
 
-    renderRow(i) {
-        return <Row value={i}/>;
+    handleClick(i) {
+        const history = this.state.history;
+        const current = history[history.length - 1]; // normaal history.length - 1
+        const squares = current.squares.slice();
+        this.setState({
+            history: history.concat([{
+                squares: squares,
+            }])
+        })
     }
 
     render() {
-        const title = 'MASTERMIND';    
+        const history = this.state.history;
+        const current = history[history.length - 1];
+        const winner = calculateWinner(current.squares);
+        const currentAttempt = history.length - 1;
+        console.log(currentAttempt);
+        let status;
+        if (winner) {
+            status = 'Congratulations, you have won the game in ' + history.length + ' attempts'
+        } else {
+            status = 'Play until your colors match the solution'
+        }
+        const title = 'MASTERMIND';   
+        var rowsWin;
+
+        if (winner) {
+            rowsWin = history.length - 1;
+        } else {
+            rowsWin = history.length;
+        }
+
+        var rows = []; 
+
+        for (var i = 0; i < history.length; i++) {
+            if (currentAttempt == i && !winner) {
+                rows.push(
+                    <Row 
+                        key={i} 
+                        value={i} 
+                        last={true} 
+                        onClick={() => this.handleClick(i)}
+                        editable={true}/>)
+            } else {
+                rows.push(
+                    <Row 
+                        key={i} 
+                        value={i} 
+                        last={false} 
+                        onClick={() => this.handleClick(i)}
+                        editable={false}
+                    />
+                )
+            }
+        }
 
         return (
             <div>
                 <div className="status">{title}</div>
+                <div className="status">{status}</div>
                 <div>
-                    {this.renderRow(0)}
-                    <br/>
-                    <button onClick={() => this.props.onClick()}>Confirm</button>
-                    {/* {this.renderRow(1)}
-                    {this.renderRow(2)}
-                    {this.renderRow(3)}
-                    {this.renderRow(4)}
-                    {this.renderRow(5)}
-                    {this.renderRow(6)}
-                    {this.renderRow(7)}
-                    {this.renderRow(8)}
-                    {this.renderRow(9)}
-                    {this.renderRow(10)}
-                    {this.renderRow(11)} */}
+                    {rows}
                 </div>
             </div>
         );
@@ -173,8 +227,10 @@ class SelectionRow extends React.Component {
         const squares = this.state.squares.slice();
         const value = this.getColor();
 
-        squares[i] = value;
-        this.setState({squares: squares});
+        if (!squares.includes(value)) {
+            squares[i] = value;
+            this.setState({squares: squares});
+        }
     }
 
     renderSquare(i) {
@@ -185,15 +241,35 @@ class SelectionRow extends React.Component {
             />
         );
     }
+
     render() {
+        const title = "MASTERMIND"
+        const status = "Choose a colour combination"
+        let rows = [];
+        if (!this.state.squares.includes(null)) {
+            rows.push(
+                <button 
+                    onClick={() => 
+                        {
+                            this.props.onClick() ; 
+                            window.localStorage.setItem('correct', this.state.squares) ; 
+                            console.log(window.localStorage.getItem('correct'))
+                        }
+                    }
+                >
+                    Confirm
+                </button>
+            )
+        }
         return(
             <div>
+                <div className="status">{title}</div>
+                <div className="status">{status}</div>
                 {this.renderSquare(0)}
                 {this.renderSquare(1)}
                 {this.renderSquare(2)}
                 {this.renderSquare(3)}
-                <br/>
-                <button onClick={() => {this.props.onClick() ; window.localStorage.setItem('correct', this.state.squares) ; console.log(window.localStorage.getItem('correct'))}}>Confirm selection</button>
+                {rows}
             </div>
         )
     }
@@ -208,7 +284,6 @@ class Game extends React.Component {
     }
     handleClick(i) {
         if (i == 1) {
-            // window.localStorage.setItem('')
             this.setState({selectColours: false});
         } else {
             this.setState({selectColours: true})
@@ -221,6 +296,7 @@ class Game extends React.Component {
     render() {
         return (
         <div className="game">
+
             {
                 this.state.selectColours && 
                 <div className="selection">
@@ -247,7 +323,9 @@ class Game extends React.Component {
 }
 
 function calculateWinner(squares) {
-    const lines = []
+    let correct = window.localStorage.getItem('correct');
+    let attempt = window.localStorage.getItem('lastEntry');
+    return JSON.stringify(correct) == JSON.stringify(attempt);
 }
 
 export default Game;
