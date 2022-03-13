@@ -1,33 +1,44 @@
 import React, {component} from 'react';
 
 function Square(props) {
+    var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
+    var color = props.value == null ? 'white' : colors[props.value]
+    var squareStyle = {
+        backgroundColor: color,
+    }
     return (
         <button 
             className="square" 
             onClick={props.onClick}
+            style={squareStyle}
         >
-            {props.value}
+            {/* {props.value} */}
         </button>
     ); 
 }
 
 class Row extends React.Component {
+    // Row blijft constructor behouden door specifieke states eigen aan de row
     constructor(props) {
         super(props);
         this.state = {
             squares: Array(4).fill(null),
             last: props.last,
             editable: props.editable,
+            colors: props.colors,
+            positions: props.positions,
         };
     }
 
-    // Assign values to the squares in Row
+    // Assign values to the squares in Row. Allows only unique values.
     handleClick(i) {
         const squares = this.state.squares.slice();
         const value = this.getColor();
 
-        squares[i] = value;
-        this.setState({squares: squares});
+        if (!squares.includes(value)) {
+            squares[i] = value;
+            this.setState({squares: squares});
+        }
     }
 
     // Get the selected color from ColorMenu
@@ -61,13 +72,18 @@ class Row extends React.Component {
                 <button 
                     onClick={
                         () => {
-                            this.props.onClick() ; 
-                            window.localStorage.setItem('lastEntry', this.state.squares) ;  
-                            console.log(window.localStorage.getItem('lastEntry'))
+                            window.localStorage.setItem('lastEntry', JSON.stringify(this.state.squares)) ;
+                            this.props.onClick()
                         }
                     }
                 >
                     Confirm
+                </button>
+            );
+        } else if(!this.props.editable) {
+            rows.push(
+                <button>
+                    C: {this.props.colors} P: {this.props.positions}
                 </button>
             );
         }
@@ -92,46 +108,54 @@ class Board extends React.Component {
         this.state = {
             history: [{
                 squares: Array(12).fill(null),
-            }]
+            }],
+            positions: [],
+            colors: []
         }
     }
 
     handleClick(i) {
         const history = this.state.history;
-        const current = history[history.length - 1]; // normaal history.length - 1
+        const current = history[history.length - 1];
         const squares = current.squares.slice();
-        this.setState({
-            history: history.concat([{
-                squares: squares,
-            }])
-        })
+        
+        const results = calculateWinner();
+        const positions = this.state.positions;
+        const colors = this.state.colors;
+
+
+        setTimeout(() => {
+            this.setState({
+                history: history.concat([{
+                    squares: squares
+                }]),
+                positions: positions.concat(results.positions),
+                colors: colors.concat(results.colors)
+            });
+        }, 300);
+        
     }
 
     render() {
         const history = this.state.history;
         const current = history[history.length - 1];
-        const winner = calculateWinner(current.squares);
+        const results = calculateWinner(current.squares);
         const currentAttempt = history.length - 1;
-        console.log(currentAttempt);
         let status;
-        if (winner) {
-            status = 'Congratulations, you have won the game in ' + history.length + ' attempts'
+
+        if(results.winner) {
+            status = 'Congratulations, you have won the game in ' + currentAttempt + ' attempt'
         } else {
             status = 'Play until your colors match the solution'
         }
         const title = 'MASTERMIND';   
-        var rowsWin;
-
-        if (winner) {
-            rowsWin = history.length - 1;
-        } else {
-            rowsWin = history.length;
-        }
 
         var rows = []; 
 
         for (var i = 0; i < history.length; i++) {
-            if (currentAttempt == i && !winner) {
+            if(currentAttempt == i && currentAttempt == 12) {
+                rows.push(<p>You have been defeated!</p>)
+            } else if (currentAttempt == i && !results.winner) {
                 rows.push(
                     <Row 
                         key={i} 
@@ -139,6 +163,8 @@ class Board extends React.Component {
                         last={true} 
                         onClick={() => this.handleClick(i)}
                         editable={true}/>)
+            } else if(currentAttempt == i && results.winner) {
+                rows.push(<p>Congratulations!</p>);
             } else {
                 rows.push(
                     <Row 
@@ -147,6 +173,8 @@ class Board extends React.Component {
                         last={false} 
                         onClick={() => this.handleClick(i)}
                         editable={false}
+                        colors={this.state.colors[i]}
+                        positions={this.state.positions[i]}
                     />
                 )
             }
@@ -154,9 +182,9 @@ class Board extends React.Component {
 
         return (
             <div>
-                <div className="status">{title}</div>
-                <div className="status">{status}</div>
-                <div>
+                <div key={0} className="status">{title}</div>
+                <div key={1} className="status">{status}</div>
+                <div key={2}>
                     {rows}
                 </div>
             </div>
@@ -166,11 +194,16 @@ class Board extends React.Component {
 
 class ColorSquare extends React.Component {
     render () {
+        var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
+        var color = this.props.value == null ? 'white' : colors[this.props.value]
+        var squareStyle = {
+            backgroundColor: color,
+        }
         return (
             <button className="colorSquare" onClick={() => {
                 window.localStorage.setItem('color', this.props.value)
-                console.log(this.props.value)}}>
-                {this.props.value}
+                }}
+                style={squareStyle}>
             </button>
         );
     }
@@ -245,15 +278,14 @@ class SelectionRow extends React.Component {
     render() {
         const title = "MASTERMIND"
         const status = "Choose a colour combination"
-        let rows = [];
+        let button = [];
         if (!this.state.squares.includes(null)) {
-            rows.push(
+            button.push(
                 <button 
                     onClick={() => 
                         {
                             this.props.onClick() ; 
-                            window.localStorage.setItem('correct', this.state.squares) ; 
-                            console.log(window.localStorage.getItem('correct'))
+                            window.localStorage.setItem('correct', JSON.stringify(this.state.squares)); 
                         }
                     }
                 >
@@ -269,7 +301,7 @@ class SelectionRow extends React.Component {
                 {this.renderSquare(1)}
                 {this.renderSquare(2)}
                 {this.renderSquare(3)}
-                {rows}
+                {button}
             </div>
         )
     }
@@ -309,11 +341,6 @@ class Game extends React.Component {
                     <Board />
                 </div>
             }
-            
-            <div className="game-info">
-                <div>{/* status */}</div>
-                <ol>{/* TODO */}</ol>
-            </div>
             <div className="game-colors">
                 <ColorMenu onClick={() => this.handleClick(2)}/>
             </div>
@@ -323,9 +350,28 @@ class Game extends React.Component {
 }
 
 function calculateWinner(squares) {
-    let correct = window.localStorage.getItem('correct');
-    let attempt = window.localStorage.getItem('lastEntry');
-    return JSON.stringify(correct) == JSON.stringify(attempt);
+    let correct = JSON.parse(window.localStorage.getItem('correct'));
+    let attempt = JSON.parse(window.localStorage.getItem('lastEntry'));
+    let winner = JSON.stringify(correct) == JSON.stringify(attempt) ? true : false;
+    let colors = 0;
+    let positions = 0;
+    if (attempt !== null) {
+        for (var i = 0; i < 4; i++) {
+            if (correct[i] == attempt[i]) {
+                positions++;
+            }
+            if (correct.includes(attempt[i])) {
+                colors++;
+            }
+        }
+    }
+    
+    var calculation = {
+        colors: colors,
+        positions: positions,
+        winner: winner,
+    }
+    return calculation;
 }
 
 export default Game;
