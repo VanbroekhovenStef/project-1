@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {component} from 'react';
 
 function Square(props) {
     var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
