@@ -1,4 +1,4 @@
-import React, {component} from 'react';
+import React from 'react';
 
 function Square(props) {
     var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
@@ -326,6 +326,9 @@ class Game extends React.Component {
 
 
     render() {
+        var boardStyle={
+            margin: 15
+        }
         return (
         <div className="game">
 
@@ -338,7 +341,7 @@ class Game extends React.Component {
             {
                 !this.state.selectColours &&
                 <div className="game-board">
-                    <Board />
+                    <Board style={boardStyle}/>
                 </div>
             }
             <div className="game-colors">
