@@ -144,7 +144,7 @@ class Board extends React.Component {
         let status;
 
         if(results.winner) {
-            status = 'Congratulations, you have won the game in ' + currentAttempt + ' attempt'
+            status = 'Congratulations, you have won the game in ' + currentAttempt + ' attempt   '
         } else {
             status = 'Play until your colors match the solution'
         }
@@ -203,7 +203,8 @@ class ColorSquare extends React.Component {
             <button className="colorSquare" onClick={() => {
                 window.localStorage.setItem('color', this.props.value)
                 }}
-                style={squareStyle}>
+                style={squareStyle}
+            >
             </button>
         );
     }

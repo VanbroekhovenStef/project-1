@@ -68,3 +68,8 @@ ol, ul {
   text-align: center;
   width: 34px;
 }
+
+.game-colors {
+  margin: 10px;
+  padding: 10px;
+}
