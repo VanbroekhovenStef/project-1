@@ -1,4 +1,4 @@
-import React, {component} from 'react';
+import React from 'react';
 
 function Square(props) {
     var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
@@ -114,7 +114,7 @@ class Board extends React.Component {
         }
     }
 
-    handleClick(i) {
+    handleClick() {
         const history = this.state.history;
         const current = history[history.length - 1];
         const squares = current.squares.slice();
@@ -153,17 +153,17 @@ class Board extends React.Component {
         var rows = []; 
 
         for (var i = 0; i < history.length; i++) {
-            if(currentAttempt == i && currentAttempt == 12) {
+            if(currentAttempt === i && currentAttempt === 12) {
                 rows.push(<p>You have been defeated!</p>)
-            } else if (currentAttempt == i && !results.winner) {
+            } else if (currentAttempt === i && !results.winner) {
                 rows.push(
                     <Row 
                         key={i} 
                         value={i} 
                         last={true} 
-                        onClick={() => this.handleClick(i)}
+                        onClick={() => this.handleClick()}
                         editable={true}/>)
-            } else if(currentAttempt == i && results.winner) {
+            } else if(currentAttempt === i && results.winner) {
                 rows.push(<p>Congratulations!</p>);
             } else {
                 rows.push(
@@ -171,7 +171,7 @@ class Board extends React.Component {
                         key={i} 
                         value={i} 
                         last={false} 
-                        onClick={() => this.handleClick(i)}
+                        onClick={() => this.handleClick()}
                         editable={false}
                         colors={this.state.colors[i]}
                         positions={this.state.positions[i]}
@@ -195,7 +195,7 @@ class Board extends React.Component {
 class ColorSquare extends React.Component {
     render () {
         var colors = ['blue', 'green', 'yellow', 'purple', 'white', 'pink', 'red', 'orange'];
-        var color = this.props.value == null ? 'white' : colors[this.props.value]
+        var color = this.props.value === null ? 'white' : colors[this.props.value]
         var squareStyle = {
             backgroundColor: color,
         }
@@ -315,7 +315,7 @@ class Game extends React.Component {
         }
     }
     handleClick(i) {
-        if (i == 1) {
+        if (i === 1) {
             this.setState({selectColours: false});
         } else {
             this.setState({selectColours: true})
@@ -352,12 +352,12 @@ class Game extends React.Component {
 function calculateWinner(squares) {
     let correct = JSON.parse(window.localStorage.getItem('correct'));
     let attempt = JSON.parse(window.localStorage.getItem('lastEntry'));
-    let winner = JSON.stringify(correct) == JSON.stringify(attempt) ? true : false;
+    let winner = JSON.stringify(correct) === JSON.stringify(attempt) ? true : false;
     let colors = 0;
     let positions = 0;
     if (attempt !== null) {
         for (var i = 0; i < 4; i++) {
-            if (correct[i] == attempt[i]) {
+            if (correct[i] === attempt[i]) {
                 positions++;
             }
             if (correct.includes(attempt[i])) {
